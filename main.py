@@ -1,3 +1,10 @@
+"""
+PyOpsBox launcher.
+
+This module provides a simple interactive menu that dispatches shell scripts
+from the local ``scripts/`` directory.
+"""
+
 from __future__ import annotations
 
 import shlex
@@ -11,21 +18,31 @@ SCRIPTS_DIR = ROOT_DIR / "scripts"
 
 
 def info(message: str) -> None:
+	"""Print an informational message to stdout."""
 	print(f"[INFO] {message}")
 
 
 def warn(message: str) -> None:
+	"""Print a warning message to stderr."""
 	print(f"[WARN] {message}", file=sys.stderr)
 	
 def error(message: str) -> None:
-    print(f"[ERROR] {message}", file=sys.stderr)
+	"""Print an error message to stderr."""
+	print(f"[ERROR] {message}", file=sys.stderr)
 
 
 def run_script(script_rel_path: str, script_args: list[str] | None = None) -> int:
-	script_args = script_args or []
+	"""
+	Run a script located under ``scripts/`` and return its exit code.
+
+	The function validates that the target path remains inside ``scripts/``
+	before execution.
+	"""
+	script_args = script_args or [] # script_args if not None else []
 	script_path = (SCRIPTS_DIR / script_rel_path).resolve()
 
 	try:
+		# Prevent path traversal such as ../../outside.sh.
 		script_path.relative_to(SCRIPTS_DIR.resolve())
 	except ValueError:
 		error("Script path must stay inside scripts/ directory.")
@@ -40,11 +57,18 @@ def run_script(script_rel_path: str, script_args: list[str] | None = None) -> in
 
 	stdin_stream = None
 	try:
+		# Bind child stdin to terminal when available so script prompts work
+		# without consuming launcher menu input streams.
 		if Path("/dev/tty").exists():
 			stdin_stream = open("/dev/tty", "r", encoding="utf-8", errors="ignore")
 	except OSError:
 		stdin_stream = None
 
+    # Run the command with optional stdin stream. We don't use subprocess.run's
+    # input= parameter because it expects a string/bytes, but we want to pass a
+    # file-like object for interactive prompts. Instead, we directly set the
+    # stdin argument to the opened stream. We also ensure the stream is closed
+    # after execution to avoid resource leaks.
 	try:
 		if stdin_stream is not None:
 			result = subprocess.run(command, check=False, stdin=stdin_stream)
@@ -59,6 +83,7 @@ def run_script(script_rel_path: str, script_args: list[str] | None = None) -> in
 
 
 def show_menu() -> None:
+	"""Display the interactive launcher menu."""
 	print("\n=== PyOpsBox Script Launcher ===")
 	print("1) Init Debian/Ubuntu Server")
 	print("2) Init RHEL/CentOS Server")
@@ -72,6 +97,7 @@ def show_menu() -> None:
 
 
 def show_last_result(last_command: str | None, last_exit_code: int | None) -> None:
+	"""Show a summary of the most recent executed command."""
 	if last_command is None:
 		return
 	print(f"Last run: {last_command}")
@@ -79,6 +105,7 @@ def show_last_result(last_command: str | None, last_exit_code: int | None) -> No
 
 
 def run_service_management() -> int:
+	"""Collect service-management inputs and dispatch service-mgmt script."""
 	action = input("Action (start|stop|restart|status): ").strip()
 	stack = input("Stack (lamp|lnmp|java): ").strip()
 	if not action or not stack:
@@ -88,6 +115,7 @@ def run_service_management() -> int:
 
 
 def run_custom_script() -> int:
+	"""Run a user-selected script path under ``scripts/`` with optional args."""
 	rel_path = input("Script path under scripts/ (example: general/health-check.sh): ").strip()
 	if not rel_path:
 		error("Script path cannot be empty.")
@@ -99,6 +127,7 @@ def run_custom_script() -> int:
 
 
 def command_label(choice: str) -> str:
+	"""Map menu choice to a readable command label for history display."""
 	labels = {
 		"1": "specific/init/fast-server-init-debian.sh",
 		"2": "specific/init/fast-server-init-rhel.sh",
@@ -113,6 +142,11 @@ def command_label(choice: str) -> str:
 
 
 def dispatch_choice(choice: str) -> int:
+	"""Dispatch one menu choice and return script exit code.
+
+	Special return value:
+	- 999: request launcher exit
+	"""
 	if choice == "1":
 		return run_script("specific/init/fast-server-init-debian.sh")
 	if choice == "2":
@@ -137,6 +171,7 @@ def dispatch_choice(choice: str) -> int:
 
 
 def main() -> int:
+	"""Program entry point for interactive launcher loop."""
 	if sys.platform != "linux":
 		error("This launcher supports Linux only. However your platform is:" f" {sys.platform}")
 		raise SystemExit(1)
@@ -151,6 +186,7 @@ def main() -> int:
 	last_exit_code: int | None = None
 
 	while True:
+		# Keep showing status + menu after every completed action.
 		show_last_result(last_command, last_exit_code)
 		show_menu()
 		try:
