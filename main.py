@@ -37,7 +37,23 @@ def run_script(script_rel_path: str, script_args: list[str] | None = None) -> in
 
 	command = ["bash", str(script_path), *script_args]
 	info(f"Running: {' '.join(command)}")
-	result = subprocess.run(command, check=False)
+
+	stdin_stream = None
+	try:
+		if Path("/dev/tty").exists():
+			stdin_stream = open("/dev/tty", "r", encoding="utf-8", errors="ignore")
+	except OSError:
+		stdin_stream = None
+
+	try:
+		if stdin_stream is not None:
+			result = subprocess.run(command, check=False, stdin=stdin_stream)
+		else:
+			result = subprocess.run(command, check=False)
+	finally:
+		if stdin_stream is not None:
+			stdin_stream.close()
+
 	info(f"Script exit code: {result.returncode}")
 	return int(result.returncode)
 
@@ -53,6 +69,13 @@ def show_menu() -> None:
 	print("7) Service management (LAMP/LNMP/Java)")
 	print("8) Run custom script under scripts/")
 	print("0) Exit")
+
+
+def show_last_result(last_command: str | None, last_exit_code: int | None) -> None:
+	if last_command is None:
+		return
+	print(f"Last run: {last_command}")
+	print(f"Last exit code: {last_exit_code}")
 
 
 def run_service_management() -> int:
@@ -73,6 +96,20 @@ def run_custom_script() -> int:
 	args_text = input("Args (optional, shell style): ").strip()
 	args = shlex.split(args_text) if args_text else []
 	return run_script(rel_path, args)
+
+
+def command_label(choice: str) -> str:
+	labels = {
+		"1": "specific/init/fast-server-init-debian.sh",
+		"2": "specific/init/fast-server-init-rhel.sh",
+		"3": "general/manage-swap.sh",
+		"4": "general/create-admin.sh",
+		"5": "general/health-check.sh --run",
+		"6": "general/health-check.sh --install-cron",
+		"7": "general/service-mgmt.sh",
+		"8": "custom script",
+	}
+	return labels.get(choice, "unknown")
 
 
 def dispatch_choice(choice: str) -> int:
@@ -110,8 +147,11 @@ def main() -> int:
 
 	print("PyOpsBox started. This tool only dispatches local scripts in scripts/.")
 	print("Tip: many operations require sudo/root privileges.")
+	last_command: str | None = None
+	last_exit_code: int | None = None
 
 	while True:
+		show_last_result(last_command, last_exit_code)
 		show_menu()
 		try:
 			choice = input("Choose [0-8]: ").strip()
@@ -123,6 +163,8 @@ def main() -> int:
 		if result == 999:
 			print("Bye.")
 			return 0
+		last_command = command_label(choice)
+		last_exit_code = result
 
 
 if __name__ == "__main__":

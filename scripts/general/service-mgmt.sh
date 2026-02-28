@@ -23,7 +23,7 @@ has_cmd() {
 # Check whether a service unit exists in systemd.
 service_exists() {
 	local svc="$1"
-	systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}' | grep -qx "${svc}.service"
+	systemctl --no-pager list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}' | grep -qx "${svc}.service"
 }
 
 # Pick the first available service name from candidates.
@@ -53,7 +53,7 @@ run_action() {
 				fail "Action '${action}' requires sudo/root privileges."
 			fi
 			log "${action} -> ${service_name}"
-			systemctl "${action}" "${service_name}"
+			systemctl --no-pager "${action}" "${service_name}"
 			;;
 		*)
 			fail "Unsupported action: ${action}"
