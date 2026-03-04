@@ -138,28 +138,54 @@ This requires `curl` or `wget`, either of which is already included in most dist
 Run on Debian/Ubuntu:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/specific/init/fast-server-init-debian.sh | sudo bash
-wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/specific/init/fast-server-init-debian.sh | sudo bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/specific/init/fast-server-init-debian.sh)"
+```
+
+Or:
+
+```bash
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/specific/init/fast-server-init-debian.sh)"
 ```
 
 Run on CentOS/RHEL family:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/specific/init/fast-server-init-rhel.sh | sudo bash
-wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/specific/init/fast-server-init-rhel.sh | sudo bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/specific/init/fast-server-init-rhel.sh)"```
+```
+
+Or:
+
+```bash
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/specific/init/fast-server-init-rhel.sh)"
 ```
 
 Run general scripts:
 
+Swap Management:
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/manage-swap.sh | sudo bash
-wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/manage-swap.sh | sudo bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/manage-swap.sh)"
+```
+```bash
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/manage-swap.sh)"
+```
 
-curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/create-admin.sh | sudo bash
-wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/create-admin.sh | sudo bash
+Create Admin:
 
-curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/service-mgmt.sh | sudo bash -s -- restart lamp
-wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/service-mgmt.sh | sudo bash -s -- status java
+```bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/create-admin.sh)"
+```
+```bash
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/create-admin.sh)"
+```
+
+Manage Services:
+
+```bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/service-mgmt.sh)" -- restart lamp
+```
+```bash
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/nakamurasama072/fast-server-mgmt-scripts/main/general/service-mgmt.sh)" -- status java
 ```
 
 ## Notes

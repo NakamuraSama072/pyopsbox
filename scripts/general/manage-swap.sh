@@ -27,8 +27,6 @@ check_root_permissions() {
   fi
 }
 
-# Note: You SHOULD NOT modify other parts except the TODO sections in the script.
-
 # Detect physical memory size and recommend swap size based on it.
 recommend_swap_size() {
   local mem_kb mem_gb recommended_gb
@@ -57,7 +55,8 @@ get_swap_size() {
   local recommended_size user_input
   recommended_size="$(recommend_swap_size)"
 
-  note "Recommended swap size: ${recommended_size}G"
+  # This is to prevent the program from using printed [NOTE] info (STDOUT) as STDIN.
+  note "Recommended swap size: ${recommended_size}G" >&2
   read -r -p "Enter swap size in GB (e.g. 2 or 2G, default ${recommended_size}G): " user_input
 
   if [[ -z "${user_input}" ]]; then
@@ -93,20 +92,35 @@ check_disk_space() {
 # Create the swap file, set permissions, and enable it.
 create_and_enable_swap() {
   local swap_size_gb="$1"
+  local used_dd_fallback=false
 
   if [[ -f /swapfile ]]; then
     fail "Swap file '/swapfile' already exists. Delete it first, then retry."
   fi
 
+  # Try to create the swap file using fallocate for better performance, but fall back to dd if it fails (e.g. on filesystems that don't support fallocate).
   log "Creating /swapfile (${swap_size_gb}G)..."
   if ! fallocate -l "${swap_size_gb}G" /swapfile; then
     warn "fallocate failed on this filesystem, falling back to dd (this may take longer)."
     dd if=/dev/zero of=/swapfile bs=1G count="${swap_size_gb}" status=progress
+    used_dd_fallback=true
   fi
 
   chmod 600 /swapfile
   mkswap /swapfile >/dev/null
-  swapon /swapfile
+
+  if ! swapon /swapfile; then
+    if [[ "${used_dd_fallback}" == "true" ]]; then
+      fail "Unable to enable /swapfile even after dd fallback. Check whether '/' filesystem supports swap files and if any filesystem-level restrictions are enabled."
+    fi
+
+    warn "swapon failed for fallocate-created swapfile, retrying with dd-created swapfile..."
+    rm -f /swapfile
+    dd if=/dev/zero of=/swapfile bs=1G count="${swap_size_gb}" status=progress
+    chmod 600 /swapfile
+    mkswap /swapfile >/dev/null
+    swapon /swapfile
+  fi
 
   if ! grep -qE '^\s*/swapfile\s+none\s+swap\s+sw\s+0\s+0\s*$' /etc/fstab; then
     echo '/swapfile none swap sw 0 0' >> /etc/fstab

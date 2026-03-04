@@ -105,7 +105,7 @@ configure_sshd_root_password_auth() {
 
 	log "Disabling SSH password login for root (PermitRootLogin prohibit-password)..."
 	if grep -Eq '^[[:space:]]*#?[[:space:]]*PermitRootLogin([[:space:]]+|[[:space:]]*=[[:space:]]*).*$' "${sshd_config}"; then
-		sed -i -E 's|^[[:space:]]*#?[[:space:]]*PermitRootLogin([[:space:]]+|[[:space:]]*=[[:space:]]*).*$|PermitRootLogin prohibit-password|' "${sshd_config}"
+		sed -i -E 's@^[[:space:]]*#?[[:space:]]*PermitRootLogin([[:space:]]+|[[:space:]]*=[[:space:]]*).*$@PermitRootLogin prohibit-password@' "${sshd_config}"
 	else
 		echo -e '\nPermitRootLogin prohibit-password\n' >> "${sshd_config}"
 	fi
